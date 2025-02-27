@@ -1,21 +1,23 @@
-package my.project.onlineAuctionBackend.securities
+package my.project.onlineAuctionBackend.config
 
+import my.project.onlineAuctionBackend.securities.JwtAuthenticationFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.CorsConfigurationSource
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
 @Configuration
-class SecurityConfig {
+class SecurityConfig(
+    private val jwtAuthenticationFilter: JwtAuthenticationFilter
+) {
 
     @Bean
-    fun passwordEncoder(): BCryptPasswordEncoder {
+    fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
 
@@ -26,31 +28,15 @@ class SecurityConfig {
 
     @Bean
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
-        http.csrf { it.disable() }
-            .exceptionHandling {
-                it.authenticationEntryPoint(CustomAuthenticationEntryPoint())
-            }
+        http
+            .csrf { it.disable() }
             .authorizeHttpRequests {
-                it.requestMatchers("/api/auth/**").permitAll()
-                it.requestMatchers("/api/users/**").permitAll()
-                it.requestMatchers("/api/products/**").permitAll()
-                it.requestMatchers("/api/category/**").permitAll()
-                it.requestMatchers("/api/auth/me").authenticated()
-                it.requestMatchers("/api/admin/**").hasRole("ADMIN")
-                it.anyRequest().authenticated()
+                it
+                    .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                    .anyRequest().authenticated()
             }
-        return http.build()
-    }
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter::class.java)
 
-    @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("http://localhost:3000") // อนุญาต frontend
-        configuration.allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-        configuration.allowedHeaders = listOf("*")
-        configuration.allowCredentials = true
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration) // กำหนด CORS สำหรับทุก path
-        return source
+        return http.build()
     }
 }

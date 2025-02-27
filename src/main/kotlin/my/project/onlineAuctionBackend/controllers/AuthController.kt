@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import my.project.onlineAuctionBackend.models.User
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 
 @RestController
@@ -54,4 +55,21 @@ class AuthController(
         }
     }
 
+    @GetMapping("/me")
+    fun getMe(@AuthenticationPrincipal user: UserDetails?): ResponseEntity<Map<String, Any>> {
+        return if (user != null) {
+            ResponseEntity.ok(
+                mapOf(
+                    "username" to user.username
+                )
+            )
+        } else {
+            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+                mapOf("message" to "Unauthorized")
+            )
+        }
+    }
+
 }
+
+
