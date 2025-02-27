@@ -25,14 +25,28 @@ class AuthService(
         return "User registered successfully"
     }
 
-    fun login(username: String, password: String): String {
+    // old
+//    fun login(username: String, password: String): String {
+//        val user = userRepository.findByUsername(username)
+//            ?: throw RuntimeException("Invalid username or password")
+//
+//        if (!passwordEncoder.matches(password, user.password)) {
+//            throw RuntimeException("Invalid username or password")
+//        }
+//
+//        return jwtUtil.generateToken(user.username)
+//    }
+
+    // new
+    fun login(username: String, password: String): String? {
         val user = userRepository.findByUsername(username)
-            ?: throw RuntimeException("Invalid username or password")
+            ?: throw RuntimeException("User not found") // 🛑 ถ้าไม่เจอ ให้ส่ง 401 Unauthorized
 
         if (!passwordEncoder.matches(password, user.password)) {
-            throw RuntimeException("Invalid username or password")
+            throw RuntimeException("Invalid password") // 🛑 ถ้า Password ไม่ตรงกัน ให้ส่ง 401
         }
 
-        return jwtUtil.generateToken(user.username)
+        return jwtUtil.generateToken(user.username) // ✅ ต้องแน่ใจว่า Token ถูกสร้าง
     }
+
 }

@@ -34,16 +34,33 @@ class AuthController(
         }
     }
 
+    // old
+//    @PostMapping("/login")
+//    fun login(@RequestBody loginRequest: LoginRequest): ResponseEntity<Any> {
+//        val (username, password) = loginRequest
+//        return try {
+//            val token = authService.login(username, password)
+//            ResponseEntity.ok(mapOf("token" to token))
+//        } catch (e: RuntimeException) {
+//            ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("message" to e.message))
+//        }
+//    }
+
+    // new
     @PostMapping("/login")
     fun login(@RequestBody loginRequest: LoginRequest): ResponseEntity<Any> {
         val (username, password) = loginRequest
         return try {
-            val token = authService.login(username, password)
-            ResponseEntity.ok(mapOf("token" to token))
+            val token = authService.login(username, password) // 🛑 เช็คว่าคืนค่า null หรือไม่
+            if (token.isNullOrBlank()) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("message" to "Invalid credentials"))
+            }
+            ResponseEntity.ok(mapOf("token" to token)) // ✅ ต้องแน่ใจว่า token ถูกคืนไปยัง React
         } catch (e: RuntimeException) {
             ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(mapOf("message" to e.message))
         }
     }
+
 
     @PostMapping("/refresh")
     fun refresh(@RequestBody request: RefreshTokenRequest): ResponseEntity<Any> {
